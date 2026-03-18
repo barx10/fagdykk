@@ -1,0 +1,16 @@
+{
+  "name": "fagutvikleren",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "jest",
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@google/genai": "^1.0.0",
+    "mammoth": "^1.8.0"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
