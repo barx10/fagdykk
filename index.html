@@ -637,6 +637,158 @@ function renderStrategi(strategi) {
   grid.appendChild(formCard);
   sec.appendChild(grid);
 }
+
+function downloadHTML() {
+  const data = window._resultData;
+  if (!data) return;
+
+  const css = document.querySelector('style').textContent;
+  const safeTitle = esc(data.title || 'L\u00e6ringsverkt\u00f8y');
+  const safeSubject = esc(data.subject || '');
+
+  const navHTML = document.getElementById('tab-nav').innerHTML;
+  const contentHTML = document.getElementById('tab-content').innerHTML;
+
+  const standaloneJS = `
+const _d = ${JSON.stringify(data)};
+let _fcCards = _d.flashcards, fcFiltered = [..._d.flashcards], fcCur = 0, fcFlipped = false;
+let _utfordringPool = _d.utfordring, _utfordringTimer = null;
+
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function fcUpdate() {
+  if (!fcFiltered.length) return;
+  const c = fcFiltered[fcCur];
+  const cl = {kjerne:'Kjerne',fakta:'Fakta',begrep:'Begrep',eksempel:'Eksempel'};
+  document.getElementById('fcfront').textContent = c.front;
+  document.getElementById('fcbadge').textContent = cl[c.cat] || c.cat;
+  document.getElementById('fcback').textContent = c.back;
+  document.getElementById('fclabel').textContent = (fcCur+1) + ' / ' + fcFiltered.length;
+  document.getElementById('fccount').textContent = (fcCur+1) + ' / ' + fcFiltered.length;
+  document.getElementById('fcpb').style.width = ((fcCur+1)/fcFiltered.length*100) + '%';
+  document.getElementById('flashcard').classList.remove('flipped');
+  fcFlipped = false;
+  document.getElementById('fchint').textContent = 'Klikk for \\u00e5 snu';
+}
+
+function fcFlip() {
+  fcFlipped = !fcFlipped;
+  document.getElementById('flashcard').classList.toggle('flipped', fcFlipped);
+  document.getElementById('fchint').textContent = fcFlipped ? 'Klikk for \\u00e5 snu tilbake' : 'Klikk for \\u00e5 snu';
+}
+
+function startUtfordring() {
+  clearInterval(_utfordringTimer);
+  const item = _utfordringPool[Math.floor(Math.random() * _utfordringPool.length)];
+  window._ua = item.svar;
+  const cq = document.getElementById('cq');
+  cq.className = 'cqdis visible';
+  cq.textContent = item.sporsmal;
+  document.getElementById('cans').className = 'cadis';
+  document.getElementById('crevbtn').className = 'revbtn visible';
+  let secs = 60;
+  document.getElementById('cbar').style.width = '100%';
+  document.getElementById('cbar').className = 'tbar';
+  document.getElementById('csec').textContent = '60';
+  document.getElementById('ctimer').className = 'tbar-wrap visible';
+  _utfordringTimer = setInterval(() => {
+    secs--;
+    document.getElementById('csec').textContent = secs;
+    document.getElementById('cbar').style.width = (secs/60*100) + '%';
+    if (secs <= 20) document.getElementById('cbar').className = 'tbar warn';
+    if (secs <= 10) document.getElementById('cbar').className = 'tbar danger';
+    if (secs <= 0) clearInterval(_utfordringTimer);
+  }, 1000);
+}
+
+function revealUtfordring() {
+  clearInterval(_utfordringTimer);
+  const el = document.getElementById('cans');
+  el.textContent = window._ua;
+  el.className = 'cadis visible';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const tabIds = ['flashcards','sammendrag','sporsmal','utfordring','nokkelBegreper','strategi'];
+  document.querySelectorAll('nav button').forEach((btn, i) => {
+    btn.addEventListener('click', () => showSection(tabIds[i], btn));
+  });
+  const fc = document.getElementById('flashcard');
+  if (fc) fc.addEventListener('click', fcFlip);
+  const fcNext = document.getElementById('fc-next');
+  if (fcNext) fcNext.addEventListener('click', () => { fcCur = (fcCur+1)%fcFiltered.length; fcUpdate(); });
+  const fcPrev = document.getElementById('fc-prev');
+  if (fcPrev) fcPrev.addEventListener('click', () => { fcCur = (fcCur-1+fcFiltered.length)%fcFiltered.length; fcUpdate(); });
+  const filters = document.getElementById('fc-filters');
+  if (filters) {
+    filters.addEventListener('click', e => {
+      if (!e.target.matches('.ftab')) return;
+      filters.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+      e.target.classList.add('active');
+      const cat = e.target.dataset.cat;
+      fcFiltered = cat === 'alle' ? [..._fcCards] : _fcCards.filter(c => c.cat === cat);
+      fcCur = 0; fcUpdate();
+    });
+  }
+  document.querySelectorAll('.qi').forEach(qi => {
+    const qq = qi.querySelector('.qq');
+    if (qq) qq.addEventListener('click', () => qi.classList.toggle('open'));
+  });
+  const startBtn = document.getElementById('start-utfordring');
+  if (startBtn) startBtn.addEventListener('click', startUtfordring);
+  const revBtn = document.getElementById('crevbtn');
+  if (revBtn) revBtn.addEventListener('click', revealUtfordring);
+  document.querySelectorAll('.fi').forEach(fi => {
+    fi.addEventListener('click', () => {
+      const text = fi.firstChild ? fi.firstChild.textContent.trim() : '';
+      navigator.clipboard.writeText(text).catch(() => {});
+      fi.style.background = '#d4e8d4';
+      setTimeout(() => { fi.style.background = ''; }, 700);
+    });
+  });
+  fcUpdate();
+});
+`;
+
+  const parts = [
+    '<!DOCTYPE html>',
+    '<html lang="no">',
+    '<head>',
+    '<meta charset="UTF-8">',
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+    '<title>' + safeTitle + '</title>',
+    '<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">',
+    '<style>' + css + '</style>',
+    '</head>',
+    '<body>',
+    '<header><div>',
+    '<h1>' + safeTitle + '</h1>',
+    '<div style="font-size:.8rem;color:var(--gl);margin-top:4px;opacity:.85;">' + safeSubject + '</div>',
+    '</div></header>',
+    '<nav id="tab-nav">' + navHTML + '</nav>',
+    '<main id="tab-content">' + contentHTML + '</main>',
+    '<script>' + standaloneJS + '<' + '/script>',
+    '</body>',
+    '</html>',
+  ];
+
+  const html = parts.join('\n');
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (data.title || 'laeringsverktoy')
+    .replace(/[^a-z0-9\u00e6\u00f8\u00e5]/gi, '-')
+    .toLowerCase() + '.html';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
 <\/script>
 </body>
 </html>
