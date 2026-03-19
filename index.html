@@ -132,7 +132,7 @@ main{padding:32px 36px;max-width:920px}
     <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
       <input type="file" id="file-input" accept=".pdf,.docx" />
       <div class="drop-icon">\U0001f4c4</div>
-      <div class="drop-label">Klikk eller dra hit \u00b7 PDF eller DOCX \u00b7 maks 20MB</div>
+      <div class="drop-label">Klikk eller dra hit \u00b7 PDF (maks 3MB) eller DOCX (maks 20MB)</div>
     </div>
     <div class="file-chosen" id="file-chosen"></div>
     <div class="spinner" id="spinner">
@@ -190,8 +190,8 @@ function setFile(file) {
     errEl.textContent = 'Kun PDF og DOCX st\u00f8ttes.';
     return;
   }
-  if (file.size > 20 * 1024 * 1024) {
-    errEl.textContent = 'Filen er for stor. Maks 20MB.';
+  if (file.size > 3 * 1024 * 1024) {
+    errEl.textContent = 'Filen er for stor. Maks 3MB for PDF (DOCX inntil 20MB).';
     return;
   }
   selectedFile = file;
@@ -216,7 +216,12 @@ async function generate() {
 
     if (mimeType === 'application/pdf') {
       const arrayBuffer = await selectedFile.arrayBuffer();
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      let binary = '';
+      const bytes = new Uint8Array(arrayBuffer);
+      for (let i = 0; i < bytes.length; i += 8192) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+      }
+      const base64 = btoa(binary);
       body = { mimeType, size: selectedFile.size, data: base64 };
     } else {
       const arrayBuffer = await selectedFile.arrayBuffer();

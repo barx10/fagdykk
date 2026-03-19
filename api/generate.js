@@ -71,7 +71,7 @@ async function handler(req, res) {
       contents,
     });
 
-    const raw = response.text().trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
+    const raw = (response.text ?? '').trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
     const result = JSON.parse(raw);
     res.status(200).json(result);
   } catch (err) {
