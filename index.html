@@ -113,6 +113,28 @@ main{padding:32px 36px;max-width:920px}
 .ch{position:absolute;top:50%;right:11px;transform:translateY(-50%);font-size:.63rem;font-family:'Outfit',sans-serif;font-style:normal;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;opacity:0;transition:opacity .15s}
 .fi:hover .ch{opacity:1}
 @media(max-width:600px){header{padding:18px;flex-direction:column;align-items:flex-start;gap:10px}main{padding:20px 14px}.upload-card{padding:32px 20px}.sgrid{grid-template-columns:1fr}}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.visible{display:flex}
+.modal{background:white;border-radius:8px;padding:32px 28px;max-width:460px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.18);position:relative;max-height:90vh;overflow-y:auto}
+.modal h2{font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--dg);margin-bottom:6px}
+.modal p{font-size:.88rem;color:#444;line-height:1.65;margin-bottom:14px}
+.modal label{font-size:.82rem;font-weight:600;color:var(--dg);display:block;margin-bottom:5px}
+.modal input[type="password"],.modal input[type="text"]{width:100%;padding:10px 12px;border:1.5px solid rgba(0,0,0,.15);border-radius:4px;font-family:'Outfit',sans-serif;font-size:.88rem;margin-bottom:14px;transition:border-color .15s}
+.modal input:focus{outline:none;border-color:var(--gold)}
+.modal-close{position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--muted);line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-actions{display:flex;gap:10px;margin-top:8px}
+.modal .btn-primary{width:auto;padding:10px 24px}
+.modal .btn-secondary{background:none;border:1.5px solid rgba(0,0,0,.15);border-radius:4px;padding:10px 24px;font-family:'Outfit',sans-serif;font-size:.88rem;cursor:pointer;color:var(--muted);transition:all .15s}
+.modal .btn-secondary:hover{border-color:var(--gold);color:var(--dg)}
+.key-status{font-size:.78rem;margin-bottom:10px;padding:6px 10px;border-radius:3px}
+.key-status.ok{background:#d1fae5;color:#065f46}
+.key-status.missing{background:#fee2e2;color:#991b1b}
+.about-section{margin-bottom:16px}
+.about-section h3{font-family:'Playfair Display',serif;font-size:.95rem;color:var(--dg);margin-bottom:4px}
+.about-section p{margin-bottom:6px}
+.about-link{color:var(--lg);text-decoration:none;font-weight:500}
+.about-link:hover{color:var(--gold)}
 </style>
 </head>
 <body>
@@ -122,8 +144,63 @@ main{padding:32px 36px;max-width:920px}
     <h1 id="page-title">Lærbar</h1>
     <div id="page-sub" style="font-size:.8rem;color:var(--gl);margin-top:4px;opacity:.85;">Last opp fagstoff og f\u00e5 det differensiert</div>
   </div>
-  <div class="header-actions" id="header-actions"></div>
+  <div class="header-actions" id="header-actions">
+    <button class="btn-outline" onclick="openModal('help-modal')">Hjelp</button>
+    <button class="btn-outline" onclick="openModal('key-modal')">API</button>
+    <button class="btn-outline" onclick="openModal('about-modal')">Om</button>
+  </div>
 </header>
+
+<div class="modal-overlay" id="key-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('key-modal')">&times;</button>
+    <h2>API-nokkel</h2>
+    <p>Laerbar bruker Google Gemini til a analysere fagstoffet. Legg inn din egen API-nokkel. Den lagres kun lokalt i nettleseren din.</p>
+    <div class="key-status" id="key-status"></div>
+    <label for="api-key-input">Gemini API-nokkel</label>
+    <input type="password" id="api-key-input" placeholder="AIza..." />
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="saveApiKey()">Lagre</button>
+      <button class="btn-secondary" onclick="clearApiKey()">Fjern</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="help-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('help-modal')">&times;</button>
+    <h2>Slik bruker du Laerbar</h2>
+    <p><strong>1. Legg inn API-nokkel</strong><br>Klikk &laquo;API&raquo; i toppmenyen og lim inn din Gemini API-nokkel. Den lagres kun i nettleseren din.</p>
+    <p><strong>2. Last opp fagstoff</strong><br>Last opp en PDF (maks 3MB) eller DOCX-fil (maks 20MB) med fagstoffet du vil jobbe med.</p>
+    <p><strong>3. Generer</strong><br>Klikk &laquo;Generer laeringsverktoy&raquo;. KI-en analyserer fagstoffet og lager:</p>
+    <p>&bull; <strong>Flashcards</strong> &ndash; ov begreper og sammenhenger<br>
+       &bull; <strong>Sammendrag</strong> &ndash; nokkelpunkter per tema<br>
+       &bull; <strong>Sporsmol &amp; Svar</strong> &ndash; ovelsessporsmal med fasit<br>
+       &bull; <strong>Utfordring</strong> &ndash; tidsbasert oving<br>
+       &bull; <strong>Nokkelbegreper</strong> &ndash; sentrale begreper og sammenhenger<br>
+       &bull; <strong>Strategi</strong> &ndash; tips til muntlig framforing</p>
+    <p><strong>4. Last ned</strong><br>Klikk &laquo;Last ned HTML&raquo; for a ta med laeringsverktøyet offline.</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="about-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('about-modal')">&times;</button>
+    <h2>Om Laerbar</h2>
+    <div class="about-section">
+      <p>Laerbar er et verktoy som bruker KI til a differensiere fagstoff til interaktive laeringsverktoy.</p>
+    </div>
+    <div class="about-section">
+      <h3>Laget av</h3>
+      <p>[Ditt navn her]</p>
+      <p>[Din rolle / tittel]</p>
+    </div>
+    <div class="about-section">
+      <h3>Kontakt</h3>
+      <p><a class="about-link" href="mailto:din@epost.no">din@epost.no</a></p>
+    </div>
+  </div>
+</div>
 
 <div id="upload-view">
   <div class="upload-card">
@@ -150,6 +227,52 @@ main{padding:32px 36px;max-width:920px}
 </div>
 
 <script>
+// --- Modals & API key ---
+function openModal(id) {
+  document.getElementById(id).classList.add('visible');
+  if (id === 'key-modal') updateKeyStatus();
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('visible');
+}
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('visible');
+  });
+});
+
+function getApiKey() {
+  return localStorage.getItem('gemini_api_key') || '';
+}
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) return;
+  localStorage.setItem('gemini_api_key', key);
+  updateKeyStatus();
+}
+function clearApiKey() {
+  localStorage.removeItem('gemini_api_key');
+  document.getElementById('api-key-input').value = '';
+  updateKeyStatus();
+}
+function updateKeyStatus() {
+  const el = document.getElementById('key-status');
+  const key = getApiKey();
+  if (key) {
+    el.className = 'key-status ok';
+    el.textContent = 'Nokkel lagret (' + key.slice(0, 6) + '...)';
+    document.getElementById('api-key-input').value = key;
+  } else {
+    el.className = 'key-status missing';
+    el.textContent = 'Ingen nokkel lagret';
+  }
+}
+
+// Show key modal on first visit if no key
+if (!getApiKey()) {
+  window.addEventListener('DOMContentLoaded', () => openModal('key-modal'));
+}
+
 function esc(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -210,6 +333,14 @@ async function generate() {
   const errEl = document.getElementById('error-msg');
   const btn = document.getElementById('generate-btn');
   errEl.textContent = '';
+
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    errEl.textContent = 'Du ma legge inn en Gemini API-nokkel forst.';
+    openModal('key-modal');
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = 'Analyserer\u2026';
   document.getElementById('spinner').classList.add('visible');
@@ -226,11 +357,11 @@ async function generate() {
         binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
       }
       const base64 = btoa(binary);
-      body = { mimeType, size: selectedFile.size, data: base64 };
+      body = { mimeType, size: selectedFile.size, data: base64, apiKey };
     } else {
       const arrayBuffer = await selectedFile.arrayBuffer();
       const result = await mammoth.extractRawText({ arrayBuffer });
-      body = { mimeType, size: selectedFile.size, text: result.value };
+      body = { mimeType, size: selectedFile.size, text: result.value, apiKey };
     }
 
     const res = await fetch('/api/generate', {

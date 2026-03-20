@@ -53,14 +53,17 @@ async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { mimeType, size, data, text } = req.body;
+  const { mimeType, size, data, text, apiKey } = req.body;
 
   const validationError = validateFile(mimeType, size);
   if (validationError) return res.status(400).json({ error: validationError });
 
+  const key = apiKey || process.env.GEMINI_API_KEY;
+  if (!key) return res.status(400).json({ error: 'Mangler API-nokkel. Legg inn din Gemini API-nokkel.' });
+
   try {
     const { GoogleGenAI } = await import('@google/genai');
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    const ai = new GoogleGenAI({ apiKey: key });
 
     const contents = mimeType === 'application/pdf'
       ? [{ text: buildPrompt() }, { inlineData: { mimeType: 'application/pdf', data } }]
