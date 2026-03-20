@@ -28,10 +28,10 @@ function validateFile(mimeType, size) {
 
 function buildPrompt(audience) {
   const audienceInstruction = audience === 'elev'
-    ? '\nMålgruppen er en elev på 13 år. Bruk enkelt språk, korte setninger, og forklar vanskelige begreper.\n'
+    ? '\nTilpass språket for en elev på 13 år: korte setninger, enkle ord, hverdagslige eksempler, og forklar fagbegreper med en gang de dukker opp.\n'
     : '';
 
-  return `Du er en pedagogisk assistent. Analyser fagstoffet og generer et strukturert læringsverktøy på norsk.
+  return `Du er en fagperson med bred og dyp kunnskap. Du forklarer presist, korrekt og med gode eksempler. Analyser fagstoffet og generer et strukturert læringsverktøy på norsk.
 ${audienceInstruction}
 Returner KUN gyldig JSON uten markdown-formatering eller forklaringer:
 {

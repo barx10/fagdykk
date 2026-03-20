@@ -41,7 +41,7 @@ describe('buildPrompt', () => {
   test('elev-modus inkluderer enklere språk-instruksjon', () => {
     const prompt = buildPrompt('elev');
     expect(prompt).toMatch(/elev på 13 år/);
-    expect(prompt).toMatch(/enkelt språk/);
+    expect(prompt).toMatch(/hverdagslige eksempler/);
   });
 
   test('default (ingen argument) inkluderer ikke elevtekst', () => {
