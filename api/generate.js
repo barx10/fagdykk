@@ -95,9 +95,12 @@ async function handler(req, res) {
 
   const { mimeType, size, text, apiKey, model, audience } = req.body;
 
-  const validationError = validateFile(mimeType, size);
-  if (validationError) return res.status(400).json({ error: validationError });
+  if (mimeType) {
+    const validationError = validateFile(mimeType, size);
+    if (validationError) return res.status(400).json({ error: validationError });
+  }
 
+  if (!text || !text.trim()) return res.status(400).json({ error: 'Ingen tekst mottatt.' });
   if (!apiKey) return res.status(400).json({ error: 'Mangler API-nokkel.' });
   if (!model || !ALL_MODELS.includes(model)) return res.status(400).json({ error: 'Ugyldig modell.' });
 

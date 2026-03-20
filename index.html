@@ -78,7 +78,7 @@
     <button class="modal-close" onclick="closeModal('help-modal')">&times;</button>
     <h2>Slik bruker du Lærbart</h2>
     <p><strong>1. Legg inn API-nøkkel</strong><br>Klikk «API» i toppmenyen, lim inn din API-nøkkel for Google Gemini eller OpenAI, og velg modell. Nøklene lagres kun i nettleseren din.</p>
-    <p><strong>2. Last opp fagstoff</strong><br>Last opp en PDF eller DOCX-fil (maks 20MB) med fagstoffet du vil jobbe med. Kun tekst leses — illustrasjoner og figurer blir ikke analysert.</p>
+    <p><strong>2. Legg inn fagstoff</strong><br>Last opp en PDF eller DOCX-fil (maks 20MB), lim inn tekst direkte, eller legg inn en lenke til en artikkel. Kun tekst leses — illustrasjoner og figurer blir ikke analysert.</p>
     <p><strong>3. Generer</strong><br>Klikk «Generer læringsverktøy». KI-en analyserer fagstoffet og lager:</p>
     <p>&bull; <strong>Flashcards</strong> &ndash; øv begreper og sammenhenger<br>
        &bull; <strong>Sammendrag</strong> &ndash; nøkkelpunkter per tema<br>
@@ -111,12 +111,26 @@
   <div class="upload-card">
     <h2>Last opp fagstoff</h2>
     <p>Verktøyet analyserer fagstoffet ditt og lager flashcards, sammendrag, spørsmål og mer.</p>
-    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
-      <input type="file" id="file-input" accept=".pdf,.docx" />
-      <div class="drop-icon">📄</div>
-      <div class="drop-label">Klikk eller dra hit · PDF eller DOCX (maks 20MB)<br><span style="font-size:.78rem;opacity:.7;">Kun tekst leses — illustrasjoner og figurer blir ikke analysert</span></div>
+    <div class="input-tabs">
+      <button class="input-tab active" data-mode="fil">Fil</button>
+      <button class="input-tab" data-mode="tekst">Lim inn tekst</button>
+      <button class="input-tab" data-mode="lenke">Lenke</button>
     </div>
-    <div class="file-chosen" id="file-chosen"></div>
+    <div class="input-mode active" id="mode-fil">
+      <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <input type="file" id="file-input" accept=".pdf,.docx" />
+        <div class="drop-icon">📄</div>
+        <div class="drop-label">Klikk eller dra hit · PDF eller DOCX (maks 20MB)<br><span style="font-size:.78rem;opacity:.7;">Kun tekst leses — illustrasjoner og figurer blir ikke analysert</span></div>
+      </div>
+      <div class="file-chosen" id="file-chosen"></div>
+    </div>
+    <div class="input-mode" id="mode-tekst">
+      <textarea id="paste-input" placeholder="Lim inn fagstoff her…" rows="8"></textarea>
+    </div>
+    <div class="input-mode" id="mode-lenke">
+      <input type="url" id="url-input" placeholder="https://..." />
+      <div class="url-hint">Lim inn lenke til en artikkel. Kun tekst hentes — bilder og innloggingsbeskyttet innhold støttes ikke.</div>
+    </div>
     <div class="spinner" id="spinner">
       <div class="spin"></div>
       <div class="spin-label">Analyserer fagstoffet…</div>

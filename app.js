@@ -126,6 +126,35 @@ function esc(str) {
     .replace(/'/g, '&#39;');
 }
 
+// --- Input mode switching ---
+var currentMode = 'fil';
+
+document.querySelector('.input-tabs').addEventListener('click', function(e) {
+  if (!e.target.matches('.input-tab')) return;
+  var mode = e.target.dataset.mode;
+  currentMode = mode;
+  document.querySelectorAll('.input-tab').forEach(function(t) { t.classList.remove('active'); });
+  e.target.classList.add('active');
+  document.querySelectorAll('.input-mode').forEach(function(m) { m.classList.remove('active'); });
+  document.getElementById('mode-' + mode).classList.add('active');
+  document.getElementById('error-msg').textContent = '';
+  updateGenerateBtn();
+});
+
+function updateGenerateBtn() {
+  var btn = document.getElementById('generate-btn');
+  if (currentMode === 'fil') {
+    btn.disabled = !selectedFile;
+  } else if (currentMode === 'tekst') {
+    btn.disabled = !document.getElementById('paste-input').value.trim();
+  } else if (currentMode === 'lenke') {
+    btn.disabled = !document.getElementById('url-input').value.trim();
+  }
+}
+
+document.getElementById('paste-input').addEventListener('input', updateGenerateBtn);
+document.getElementById('url-input').addEventListener('input', updateGenerateBtn);
+
 // --- File upload ---
 let selectedFile = null;
 
@@ -170,9 +199,41 @@ function setFile(file) {
   errEl.textContent = '';
 }
 
+// --- Extract text from file ---
+async function extractTextFromFile(file) {
+  const mimeType = file.type || detectMime(file.name);
+  const arrayBuffer = await file.arrayBuffer();
+
+  if (mimeType === 'application/pdf') {
+    const pdfjsLib = window.pdfjsLib;
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    const pages = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      pages.push(content.items.map(function(item) { return item.str; }).join(' '));
+    }
+    return pages.join('\n\n');
+  } else {
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    return result.value;
+  }
+}
+
+// --- Fetch text from URL ---
+async function fetchTextFromUrl(url) {
+  const res = await fetch('/api/fetch-url', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url: url }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Kunne ikke hente artikkelen.');
+  return data.text;
+}
+
 // --- Generate ---
 async function generate() {
-  if (!selectedFile) return;
   const errEl = document.getElementById('error-msg');
   const btn = document.getElementById('generate-btn');
   errEl.textContent = '';
@@ -197,28 +258,22 @@ async function generate() {
   document.getElementById('spinner').classList.add('visible');
 
   try {
-    const mimeType = selectedFile.type || detectMime(selectedFile.name);
-    const arrayBuffer = await selectedFile.arrayBuffer();
     let text;
 
-    if (mimeType === 'application/pdf') {
-      const pdfjsLib = window.pdfjsLib;
-      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
-      const pages = [];
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        pages.push(content.items.map(function(item) { return item.str; }).join(' '));
-      }
-      text = pages.join('\n\n');
-    } else {
-      const result = await mammoth.extractRawText({ arrayBuffer });
-      text = result.value;
+    if (currentMode === 'fil') {
+      if (!selectedFile) return;
+      text = await extractTextFromFile(selectedFile);
+    } else if (currentMode === 'tekst') {
+      text = document.getElementById('paste-input').value;
+    } else if (currentMode === 'lenke') {
+      var url = document.getElementById('url-input').value.trim();
+      if (!url) throw new Error('Legg inn en lenke.');
+      text = await fetchTextFromUrl(url);
     }
 
-    if (!text || !text.trim()) throw new Error('Kunne ikke hente tekst fra filen. Sjekk at den inneholder lesbar tekst.');
+    if (!text || !text.trim()) throw new Error('Kunne ikke hente tekst. Sjekk at kilden inneholder lesbar tekst.');
 
-    const body = { mimeType, size: selectedFile.size, text, apiKey, model, audience: localStorage.getItem('laerbar_audience') || 'voksen' };
+    const body = { text: text, apiKey: apiKey, model: model, audience: localStorage.getItem('laerbar_audience') || 'voksen' };
 
     const res = await fetch('/api/generate', {
       method: 'POST',
