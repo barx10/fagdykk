@@ -31,6 +31,8 @@ function buildPrompt() {
 
 Viktig: Vær akademisk kritisk gjennom hele analysen. Ikke gjengi forfatternes konklusjoner ukritisk. Identifiser metodologiske svakheter, konfounders, begrensninger i utvalg og generaliserbarhet. Skille mellom hva evidensen faktisk viser og hva forfatterne hevder. Påpek hva studien IKKE viser.
 
+Viktig om tidslinjer: Skille tydelig mellom tidsperioden kildematerialet dekker og den faktiske tidslinjen for hendelsene. Hvis en artikkel siterer dokumenter fra 2011-2014, betyr det IKKE at hendelsene kun fant sted i den perioden — det betyr bare at dokumentene dekker denne perioden. Ikke overforenkle tidsangivelser. Bruk formuleringer som «dokumentene dekker perioden...» eller «artikkelen belyser perioden...» fremfor «relasjonen varte fra X til Y» med mindre kilden eksplisitt fastslår dette.
+
 Returner KUN gyldig JSON uten markdown-formatering eller forklaringer:
 {
   "title": "Fagstoff-tittel på norsk",
