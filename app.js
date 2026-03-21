@@ -566,11 +566,30 @@ function renderArgumentasjon(items) {
       card.appendChild(evidens);
     }
 
-    if (item.motargument) {
-      const mot = document.createElement('div');
-      mot.className = 'begrep-sammenheng';
-      mot.textContent = 'Motargument: ' + item.motargument;
-      card.appendChild(mot);
+    var motListe = item.motargumenter || (item.motargument ? [item.motargument] : []);
+    if (motListe.length) {
+      const motBox = document.createElement('div');
+      motBox.className = 'arg-mot';
+      const motLabel = document.createElement('div');
+      motLabel.className = 'arg-mot-label';
+      motLabel.textContent = 'Motargumenter';
+      motBox.appendChild(motLabel);
+      const motUl = document.createElement('ul');
+      motUl.className = 'arg-mot-list';
+      motListe.forEach(function(m) {
+        const li = document.createElement('li');
+        li.textContent = m;
+        motUl.appendChild(li);
+      });
+      motBox.appendChild(motUl);
+      card.appendChild(motBox);
+    }
+
+    if (item.vurdering) {
+      const vurd = document.createElement('div');
+      vurd.className = 'arg-vurdering';
+      vurd.textContent = item.vurdering;
+      card.appendChild(vurd);
     }
 
     grid.appendChild(card);

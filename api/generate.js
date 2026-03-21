@@ -47,18 +47,19 @@ Returner KUN gyldig JSON uten markdown-formatering eller forklaringer:
     { "sporsmal": "Forståelsesspørsmål", "svar": "Utdypende svar", "hint": "Hint til eleven" }
   ],
   "argumentasjon": [
-    { "pastand": "Hovedpåstand fra fagstoffet", "argumenter": ["Argument 1", "Argument 2"], "evidens": "Fakta eller kildehenvisning som støtter", "motargument": "Mulig innvending eller alternativt perspektiv" }
+    { "pastand": "Hovedpåstand fra fagstoffet", "argumenter": ["Argument 1", "Argument 2"], "evidens": "Fakta eller kildehenvisning som støtter", "motargumenter": ["Innvending 1 med begrunnelse", "Innvending 2 med begrunnelse"], "vurdering": "Kort akademisk vurdering av påstandens styrke og begrensninger" }
   ],
   "ordforklaring": [
     { "ord": "Fremmedord eller fagterm fra teksten", "forklaring": "Kort, presis definisjon", "eksempel": "Ordet brukt i en setning fra fagstoffet" }
   ],
   "tverrfaglig": [
-    { "begrep": "Begrep fra fagstoffet", "fagfelt": "Konkret navngitt fagfelt", "parallell": "Tilsvarende fenomen i det andre fagfeltet", "innsikt": "Hva du lærer av å se det gjennom denne linsen" }
+    { "begrep": "Begrep fra fagstoffet", "fagfelt": "Konkret navngitt fagfelt", "parallell": "Utdypende beskrivelse av tilsvarende fenomen i det andre fagfeltet (2-3 setninger)", "innsikt": "Hva du lærer av å se det gjennom denne linsen" }
   ]
 }
 
-Trekk ut fremmedord, fagtermer og tekniske begreper som faktisk forekommer i teksten for ordforklaring. Ikke inkluder allmenne ord. Hvis teksten ikke inneholder fremmedord, returner en tom liste.
-Koble sentrale begreper til konkrete paralleller i andre navngitte fagfelt for tverrfaglig. Forklar hva koblingen tilfører av forståelse.
+Trekk kun ut ord som ville kreve forklaring for en person utenfor fagfeltet. Inkluder ikke allmenne norske ord (f.eks. «kontekstuelt», «syntese»). Hvis teksten ikke inneholder spesialiserte fagtermer, returner en tom liste.
+Koble sentrale begreper til konkrete paralleller i andre navngitte fagfelt for tverrfaglig. Beskriv parallellen utdypende (2-3 setninger), ikke bare med et stikkord.
+For argumentasjon: presenter et balansert akademisk overblikk. Hver påstand skal ha minst 2 motargumenter med begrunnelse, samt en avsluttende vurdering av påstandens styrke og svakheter.
 
 Generer minimum: 15 flashcards, 3-5 sammendrag-temaer (3-6 punkter hver), 10 Q&A-par, 4-6 argumentasjoner, 6-15 ordforklaringer, 5-8 tverrfaglige koblinger.`;
 }
