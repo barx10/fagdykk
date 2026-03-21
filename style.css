@@ -108,6 +108,13 @@ main{padding:32px 36px;max-width:920px}
 .kk-styrke--sterk .kk-dot{background:#059669}
 .kk-styrke--middels .kk-dot{background:#d97706}
 .kk-styrke--svak .kk-dot{background:#dc2626}
+.kk-group-title{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:var(--dg);margin:24px 0 2px;padding-top:8px;border-top:1px solid rgba(0,0,0,.08)}
+.kk-group-title:first-of-type{margin-top:16px;border-top:none}
+.kk-group-sub{font-size:.82rem;color:var(--gl);margin-bottom:12px}
+.kk-pastand{padding:8px 0;border-bottom:1px solid rgba(0,0,0,.04)}
+.kk-pastand:last-child{border-bottom:none}
+.kk-pastand-title{font-weight:600;color:var(--dg);margin-bottom:4px}
+.kk-list-label{font-size:.82rem;font-weight:600;color:var(--gl);margin-top:12px;margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
 @media(max-width:600px){header{padding:18px;flex-direction:column;align-items:flex-start;gap:10px}main{padding:20px 14px}.upload-card{padding:32px 20px}.sgrid{grid-template-columns:1fr}}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center;padding:20px}
 .modal-overlay.visible{display:flex}
