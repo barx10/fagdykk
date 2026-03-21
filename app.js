@@ -293,20 +293,11 @@ function showResult(data) {
   document.getElementById('upload-view').style.display = 'none';
   document.getElementById('result-view').classList.add('visible');
   document.getElementById('page-title').textContent = data.title || 'Læringsverktøy';
-  var metaParts = [data.subject || ''];
+  var metaParts = [];
   if (data.originalTitle && data.originalTitle !== data.title) metaParts.push(data.originalTitle);
-  var metaLine2 = [];
-  if (data.authors) metaLine2.push(data.authors);
-  if (data.published) metaLine2.push(data.published);
-  document.getElementById('page-sub').textContent = metaParts.join(' · ');
-  var metaEl = document.getElementById('page-meta');
-  if (!metaEl) {
-    metaEl = document.createElement('div');
-    metaEl.id = 'page-meta';
-    metaEl.style.cssText = 'font-size:.76rem;color:var(--gl);margin-top:2px;opacity:.7;';
-    document.getElementById('page-sub').after(metaEl);
-  }
-  metaEl.textContent = metaLine2.length ? metaLine2.join(' · ') : '';
+  if (data.authors) metaParts.push(data.authors);
+  if (data.published) metaParts.push(data.published);
+  document.getElementById('page-sub').textContent = metaParts.length ? metaParts.join(' · ') : '';
 
   const actions = document.getElementById('header-actions');
   while (actions.firstChild) actions.removeChild(actions.firstChild);
@@ -703,7 +694,6 @@ async function downloadHTML() {
   const cssRes = await fetch('/style.css');
   const css = await cssRes.text();
   const safeTitle = esc(data.title || 'Læringsverktøy');
-  const safeSubject = esc(data.subject || '');
 
   const navHTML = document.getElementById('tab-nav').innerHTML;
   const contentHTML = document.getElementById('tab-content').innerHTML;
@@ -783,8 +773,7 @@ document.addEventListener('DOMContentLoaded', () => {
     '<body>',
     '<header><div>',
     '<h1>' + safeTitle + '</h1>',
-    '<div style="font-size:.8rem;color:var(--gl);margin-top:4px;opacity:.85;">' + esc([data.subject || '', (data.originalTitle && data.originalTitle !== data.title ? data.originalTitle : '')].filter(Boolean).join(' · ')) + '</div>',
-    (data.authors || data.published ? '<div style="font-size:.76rem;color:var(--gl);margin-top:2px;opacity:.7;">' + esc([data.authors, data.published].filter(Boolean).join(' · ')) + '</div>' : ''),
+    '<div style="font-size:.8rem;color:var(--gl);margin-top:4px;opacity:.85;">' + esc([(data.originalTitle && data.originalTitle !== data.title ? data.originalTitle : ''), data.authors || '', data.published || ''].filter(Boolean).join(' · ')) + '</div>',
     '</div></header>',
     '<nav id="tab-nav">' + navHTML + '</nav>',
     '<main id="tab-content">' + contentHTML + '</main>',
