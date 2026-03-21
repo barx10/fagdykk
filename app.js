@@ -326,10 +326,9 @@ function showSection(id, btn) {
 function renderTabs(data) {
   const tabs = [
     { id: 'sammendrag', label: 'Sammendrag' },
-    { id: 'argumentasjon', label: 'Argumentasjon' },
-    { id: 'ordforklaring', label: 'Ordforklaring' },
     { id: 'sporsmal', label: 'Spørsmål & Svar' },
-    { id: 'tverrfaglig', label: 'Tverrfaglig' },
+    { id: 'argumentasjon', label: 'Argumentasjon' },
+    { id: 'kildekritikk', label: 'Kildekritikk' },
     { id: 'flashcards', label: 'Flashcards' },
   ];
 
@@ -355,8 +354,7 @@ function renderTabs(data) {
   renderSammendrag(data.sammendrag);
   renderQA(data.qa);
   renderArgumentasjon(data.argumentasjon);
-  renderOrdforklaring(data.ordforklaring);
-  renderTverrfaglig(data.tverrfaglig);
+  renderKildekritikk(data.kildekritikk);
 }
 
 // --- Flashcards ---
@@ -596,92 +594,146 @@ function renderArgumentasjon(items) {
   sec.appendChild(grid);
 }
 
-// --- Ordforklaring ---
-function renderOrdforklaring(items) {
-  if (!items || !items.length) return;
-  const sec = document.getElementById('ordforklaring');
+// --- Kildekritikk ---
+function renderKildekritikk(data) {
+  if (!data) return;
+  var sec = document.getElementById('kildekritikk');
 
-  const secTitle = document.createElement('div');
+  var secTitle = document.createElement('div');
   secTitle.className = 'sec-title';
-  secTitle.textContent = 'Ordforklaring';
-  const secSub = document.createElement('div');
+  secTitle.textContent = 'Kildekritikk';
+  var secSub = document.createElement('div');
   secSub.className = 'sec-sub';
-  secSub.textContent = 'Fremmedord og fagtermer fra teksten.';
+  secSub.textContent = 'Systematisk vurdering av kildens troverdighet og kvalitet.';
   sec.appendChild(secTitle);
   sec.appendChild(secSub);
 
-  const grid = document.createElement('div');
+  var grid = document.createElement('div');
   grid.className = 'begrep-grid';
 
-  items.forEach(function(item) {
-    const card = document.createElement('div');
-    card.className = 'begrep-card';
+  // Kort 1: Kildevurdering
+  if (data.kildevurdering) {
+    var kv = data.kildevurdering;
+    var card1 = document.createElement('div');
+    card1.className = 'begrep-card';
+    var t1 = document.createElement('h3');
+    t1.className = 'begrep-title';
+    t1.textContent = 'Kildevurdering';
+    card1.appendChild(t1);
 
-    const title = document.createElement('div');
-    title.className = 'begrep-title';
-    title.textContent = item.ord;
+    var fields = [
+      { label: 'Forfatter', value: kv.forfatter },
+      { label: 'Publiseringskanal', value: kv.publiseringskanal },
+      { label: 'Finansiering', value: kv.finansiering },
+      { label: 'Aktualitet', value: kv.aktualitet },
+    ];
+    fields.forEach(function(f) {
+      if (!f.value) return;
+      var row = document.createElement('div');
+      row.className = 'kk-field';
+      var label = document.createElement('span');
+      label.className = 'kk-label';
+      label.textContent = f.label + ': ';
+      var val = document.createElement('span');
+      val.textContent = f.value;
+      row.appendChild(label);
+      row.appendChild(val);
+      card1.appendChild(row);
+    });
+    grid.appendChild(card1);
+  }
 
-    const forklaring = document.createElement('div');
-    forklaring.className = 'begrep-forklaring';
-    forklaring.textContent = item.forklaring;
+  // Kort 2: Metodekritikk
+  if (data.metodekritikk && data.metodekritikk.length) {
+    var card2 = document.createElement('div');
+    card2.className = 'begrep-card';
+    var t2 = document.createElement('h3');
+    t2.className = 'begrep-title';
+    t2.textContent = 'Metodekritikk';
+    card2.appendChild(t2);
+    var ul2 = document.createElement('ul');
+    ul2.className = 'arg-list';
+    data.metodekritikk.forEach(function(p) {
+      var li = document.createElement('li');
+      li.textContent = p;
+      ul2.appendChild(li);
+    });
+    card2.appendChild(ul2);
+    grid.appendChild(card2);
+  }
 
-    card.appendChild(title);
-    card.appendChild(forklaring);
+  // Kort 3: Argumentasjonskritikk
+  if (data.argumentasjonskritikk && data.argumentasjonskritikk.length) {
+    var card3 = document.createElement('div');
+    card3.className = 'begrep-card';
+    var t3 = document.createElement('h3');
+    t3.className = 'begrep-title';
+    t3.textContent = 'Argumentasjonskritikk';
+    card3.appendChild(t3);
+    var ul3 = document.createElement('ul');
+    ul3.className = 'arg-list';
+    data.argumentasjonskritikk.forEach(function(p) {
+      var li = document.createElement('li');
+      li.textContent = p;
+      ul3.appendChild(li);
+    });
+    card3.appendChild(ul3);
+    grid.appendChild(card3);
+  }
 
-    if (item.eksempel) {
-      const eksempel = document.createElement('div');
-      eksempel.className = 'begrep-sammenheng';
-      eksempel.textContent = '\u00ab' + item.eksempel + '\u00bb';
-      card.appendChild(eksempel);
+  // Kort 4: Samlet kildevurdering
+  if (data.samlet) {
+    var card4 = document.createElement('div');
+    card4.className = 'begrep-card';
+    var t4 = document.createElement('h3');
+    t4.className = 'begrep-title';
+    t4.textContent = 'Samlet kildevurdering';
+    card4.appendChild(t4);
+
+    // Trafikklys
+    var indicator = document.createElement('div');
+    indicator.className = 'kk-styrke kk-styrke--' + (data.samlet.styrke || 'middels');
+    var dot = document.createElement('span');
+    dot.className = 'kk-dot';
+    var styrkeLabel = { sterk: 'Sterk kilde', middels: 'Middels kilde', svak: 'Svak kilde' };
+    var styrkeTxt = document.createElement('span');
+    styrkeTxt.textContent = styrkeLabel[data.samlet.styrke] || 'Vurdering ikke tilgjengelig';
+    indicator.appendChild(dot);
+    indicator.appendChild(styrkeTxt);
+    card4.appendChild(indicator);
+
+    if (data.samlet.vurdering) {
+      var vurd = document.createElement('div');
+      vurd.className = 'begrep-forklaring';
+      vurd.textContent = data.samlet.vurdering;
+      card4.appendChild(vurd);
     }
-
-    grid.appendChild(card);
-  });
-
-  sec.appendChild(grid);
-}
-
-// --- Tverrfaglig ---
-function renderTverrfaglig(items) {
-  if (!items || !items.length) return;
-  const sec = document.getElementById('tverrfaglig');
-
-  const secTitle = document.createElement('div');
-  secTitle.className = 'sec-title';
-  secTitle.textContent = 'Tverrfaglig';
-  const secSub = document.createElement('div');
-  secSub.className = 'sec-sub';
-  secSub.textContent = 'Koblinger til andre fagfelt.';
-  sec.appendChild(secTitle);
-  sec.appendChild(secSub);
-
-  const grid = document.createElement('div');
-  grid.className = 'begrep-grid';
-
-  items.forEach(function(item) {
-    const card = document.createElement('div');
-    card.className = 'begrep-card';
-
-    const title = document.createElement('h3');
-    title.className = 'begrep-title';
-    title.textContent = item.begrep + ' \u2192 ' + item.fagfelt;
-
-    const parallell = document.createElement('div');
-    parallell.className = 'begrep-forklaring';
-    parallell.textContent = item.parallell;
-
-    card.appendChild(title);
-    card.appendChild(parallell);
-
-    if (item.innsikt) {
-      const innsikt = document.createElement('div');
-      innsikt.className = 'begrep-sammenheng';
-      innsikt.textContent = item.innsikt;
-      card.appendChild(innsikt);
+    if (data.samlet.bruksomrade) {
+      var bruk = document.createElement('div');
+      bruk.className = 'kk-field';
+      var brukLabel = document.createElement('span');
+      brukLabel.className = 'kk-label';
+      brukLabel.textContent = 'Kan brukes til: ';
+      var brukVal = document.createElement('span');
+      brukVal.textContent = data.samlet.bruksomrade;
+      bruk.appendChild(brukLabel);
+      bruk.appendChild(brukVal);
+      card4.appendChild(bruk);
     }
-
-    grid.appendChild(card);
-  });
+    if (data.samlet.begrensninger) {
+      var begr = document.createElement('div');
+      begr.className = 'kk-field';
+      var begrLabel = document.createElement('span');
+      begrLabel.className = 'kk-label';
+      begrLabel.textContent = 'Kan IKKE brukes til: ';
+      var begrVal = document.createElement('span');
+      begrVal.textContent = data.samlet.begrensninger;
+      begr.appendChild(begrLabel);
+      begr.appendChild(begrVal);
+      card4.appendChild(begr);
+    }
+    grid.appendChild(card4);
+  }
 
   sec.appendChild(grid);
 }
