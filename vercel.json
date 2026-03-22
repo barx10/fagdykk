@@ -3,7 +3,7 @@
   "installCommand": "npm install --production",
   "functions": {
     "api/generate.js": {
-      "maxDuration": 60
+      "maxDuration": 90
     }
   },
   "rewrites": [

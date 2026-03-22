@@ -156,15 +156,13 @@ async function handler(req, res) {
   const prompt = buildPrompt();
   const isGoogle = GOOGLE_MODELS.includes(model);
 
+  let raw;
   try {
-    const raw = isGoogle
+    raw = isGoogle
       ? await callGemini(apiKey, model, prompt, text)
       : await callOpenAI(apiKey, model, prompt, text);
-
-    const result = JSON.parse(raw);
-    res.status(200).json(result);
   } catch (err) {
-    console.error(err);
+    console.error('API call error:', err);
 
     if (err.status === 401 || err.code === 401 || (err.message && err.message.includes('API key'))) {
       return res.status(401).json({ error: 'Ugyldig API-nokkel. Sjekk at nokkelen er riktig.' });
@@ -172,7 +170,15 @@ async function handler(req, res) {
     if (err.status === 429 || err.code === 429) {
       return res.status(429).json({ error: 'API-kvote overskredet. Prov igjen senere.' });
     }
-    res.status(500).json({ error: 'Noe gikk galt under generering. Prov igjen.' });
+    return res.status(500).json({ error: 'Feil ved kontakt med AI-tjenesten: ' + (err.message || 'ukjent feil') });
+  }
+
+  try {
+    const result = JSON.parse(raw);
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('JSON parse error. Raw response (first 500 chars):', raw ? raw.substring(0, 500) : 'empty');
+    res.status(500).json({ error: 'AI-en returnerte ugyldig JSON. Prov igjen.' });
   }
 }
 
