@@ -349,7 +349,7 @@ async function callGeminiWithPdfDirect(apiKey, model, file) {
   const pdfBase64 = btoa(binary);
 
   const prompt = buildClientPrompt();
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
+  const url = 'https://generativelanguage.googleapis.com/v1/models/' + model + ':generateContent?key=' + apiKey;
   const reqBody = JSON.stringify({
     contents: [{
       parts: [
