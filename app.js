@@ -214,14 +214,26 @@ async function extractTextFromFile(file) {
     await loadScript('/lib/pdf.min.js');
     const pdfjsLib = window.pdfjsLib;
     pdfjsLib.GlobalWorkerOptions.workerSrc = '/lib/pdf.worker.min.js';
-    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    let pdf;
+    try {
+      pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+    } catch (err) {
+      console.error('pdf.js getDocument feilet:', err);
+      throw new Error('Kunne ikke lese PDF-filen: ' + (err.message || 'ukjent feil'));
+    }
     const pages = [];
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
-      pages.push(content.items.map(function(item) { return item.str; }).join(' '));
+      const pageText = content.items.map(function(item) { return item.str; }).join(' ').trim();
+      pages.push(pageText);
     }
-    return pages.join('\n\n');
+    const text = pages.join('\n\n');
+    console.log('PDF-ekstraksjon:', pdf.numPages, 'sider,', text.length, 'tegn');
+    if (!text.trim()) {
+      throw new Error('PDF-en ser ut til å være skannet (bildebasert) og inneholder ingen søkbar tekst. Prøv å kopiere teksten manuelt og bruk «Lim inn tekst»-fanen.');
+    }
+    return text;
   } else {
     await loadScript('https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js');
     const result = await mammoth.extractRawText({ arrayBuffer });
