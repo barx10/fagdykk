@@ -253,40 +253,130 @@ async function fetchTextFromUrl(url) {
   return data.text;
 }
 
-// --- Upload PDF directly to Gemini File API ---
-async function uploadPdfToGemini(apiKey, file) {
-  const initRes = await fetch(
-    'https://generativelanguage.googleapis.com/upload/v1beta/files?uploadType=resumable&key=' + apiKey,
-    {
-      method: 'POST',
-      headers: {
-        'X-Goog-Upload-Protocol': 'resumable',
-        'X-Goog-Upload-Command': 'start',
-        'X-Goog-Upload-Header-Content-Length': String(file.size),
-        'X-Goog-Upload-Header-Content-Type': 'application/pdf',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ file: { display_name: file.name } }),
-    }
-  );
-  if (!initRes.ok) throw new Error('Kunne ikke starte filopplasting til Gemini.');
+// --- Prompt (mirrors api/generate.js buildPrompt) ---
+function buildClientPrompt() {
+  return `Du er en fagperson med bred og dyp kunnskap, og du leser akademisk litteratur med et kritisk blikk. Analyser fagstoffet og generer et strukturert læringsverktøy på norsk.
 
-  const uploadUrl = initRes.headers.get('X-Goog-Upload-URL');
-  if (!uploadUrl) throw new Error('Fikk ikke opplastings-URL fra Gemini.');
+Viktig: Vær akademisk kritisk gjennom hele analysen. Ikke gjengi forfatternes konklusjoner ukritisk. Identifiser metodologiske svakheter, konfounders, begrensninger i utvalg og generaliserbarhet. Skille mellom hva evidensen faktisk viser og hva forfatterne hevder. Påpek hva studien IKKE viser.
 
-  const uploadRes = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Length': String(file.size),
-      'X-Goog-Upload-Command': 'upload, finalize',
-      'X-Goog-Upload-Offset': '0',
+Viktig om tidslinjer: Skille tydelig mellom tidsperioden kildematerialet dekker og den faktiske tidslinjen for hendelsene. Hvis en artikkel siterer dokumenter fra 2011-2014, betyr det IKKE at hendelsene kun fant sted i den perioden — det betyr bare at dokumentene dekker denne perioden. Ikke overforenkle tidsangivelser. Bruk formuleringer som «dokumentene dekker perioden...» eller «artikkelen belyser perioden...» fremfor «relasjonen varte fra X til Y» med mindre kilden eksplisitt fastslår dette.
+
+Returner KUN gyldig JSON uten markdown-formatering eller forklaringer:
+{
+  "title": "Fagstoff-tittel på norsk",
+  "subject": "Fag/emne",
+  "originalTitle": "Originaltittel på kildens språk (hvis annet enn norsk, ellers samme som title)",
+  "authors": "Forfatter(e) hvis nevnt i teksten, ellers tom streng",
+  "published": "Publiseringsår eller dato hvis nevnt, ellers tom streng",
+  "sammendrag": [
+    { "tema": "Temaoverskrift", "punkter": ["Punkt 1", "Punkt 2"] }
+  ],
+  "qa": [
+    { "sporsmal": "Kritisk eller utfordrende spørsmål", "svar": "Utdypende svar med nyanser", "hint": "Ledetråd" }
+  ],
+  "argumentasjon": [
+    { "pastand": "Hovedpåstand fra fagstoffet", "argumenter": ["Argument 1", "Argument 2"], "evidens": "Fakta eller kildehenvisning som støtter", "motargumenter": ["Innvending 1 med begrunnelse", "Innvending 2 med begrunnelse"], "vurdering": "Kort akademisk vurdering av påstandens styrke og begrensninger" }
+  ],
+  "kildekritikk": {
+    "kildevurdering": {
+      "forfatter": "Vurdering av forfatterens autoritet, tilknytning og mulige interessekonflikter",
+      "publiseringskanal": "Type publikasjon — fagfellevurdert tidsskrift, forlag, rapport, blogg osv.",
+      "formål": "Tekstens formål og agenda — hvorfor ble den skrevet, hvem er målgruppen, og finnes det interessekonflikter eller finansieringskilder som kan påvirke innholdet",
+      "aktualitet": "Når publisert og om funnene fortsatt er relevante"
     },
-    body: file,
-  });
-  if (!uploadRes.ok) throw new Error('Filopplasting til Gemini feilet.');
+    "kildetype": {
+      "type": "primærkilde|sekundærkilde",
+      "sjanger": "Sjanger og form — fagfellevurdert artikkel, lærebok, kronikk, rapport, nyhetsartikkel osv.",
+      "begrunnelse": "Kort begrunnelse for klassifiseringen"
+    },
+    "metodekritikk": ["Konkret svakhet 1", "Konkret svakhet 2"],
+    "samlet_kilde": {
+      "styrke": "sterk|middels|svak",
+      "vurdering": "Helhetlig kvalitativ vurdering av kildens troverdighet og akademiske kvalitet",
+      "bruksomrade": "Hva denne kilden kan brukes til",
+      "begrensninger": "Hva denne kilden IKKE kan brukes til"
+    },
+    "pastandsanalyse": [
+      {
+        "pastand": "Nøkkelpåstand fra teksten",
+        "underbygging": "Vurdering av om evidensen i teksten faktisk underbygger påstanden",
+        "konsensus": "Hvordan påstanden står seg mot etablert forskning og konsensus i feltet"
+      }
+    ],
+    "perspektiv": {
+      "ramme": "Overordnet teoretisk eller ideologisk posisjon teksten opererer innenfor",
+      "eksempler": ["Konkret eksempel på bias — ordvalg, framing eller kildeseleksjon"],
+      "utelatt": ["Perspektiv eller vinkling som mangler i teksten"]
+    },
+    "sprak_og_virkemidler": {
+      "tone": "Overordnet beskrivelse av tekstens tone — nøytral, engasjert, polemisk, akademisk osv.",
+      "ladede_ord": ["Konkret eksempel på ladet ordvalg med forklaring av effekten"],
+      "retoriske_grep": ["Konkret retorisk grep brukt i teksten — f.eks. appell til autoritet, følelsesappell, gjentakelse"]
+    },
+    "samlet_innhold": {
+      "styrke": "sterk|middels|svak",
+      "vurdering": "Kvalitativ helhetsvurdering av innholdets troverdighet og balanse"
+    }
+  }
+}
 
-  const fileData = await uploadRes.json();
-  return fileData.file.uri;
+For argumentasjon: identifiser ALLE sentrale påstander i teksten — en fagartikkel har alltid flere enn én. Presenter et balansert akademisk overblikk for hver. Hver påstand skal ha minst 2 motargumenter med begrunnelse — inkluder metodologisk kritikk (utvalg, design, konfounders, ekstern validitet), ikke bare alternative perspektiver. Vurderingen skal eksplisitt adressere evidensstyrke og hva som mangler for å trekke sikre konklusjoner. Det er KRITISK at du genererer minst 4 argumentasjoner — aldri bare 1.
+For sammendrag: presenter 4-5 temaer med nøkkelpunkter (4-6 punkter per tema). Hvert punkt skal være substansielt og spesifikt — ikke generelle oppsummeringer. Inkluder konkrete detaljer, tall, navn og funn fra teksten. IKKE inkluder metodekritikk her — det dekkes av kildekritikk-seksjonen. Sammendraget skal gi leseren en grundig forståelse av innholdet uten å måtte lese originalteksten.
+For Q&A: minst 3 av spørsmålene skal utfordre premissene i teksten (f.eks. «Er det rimelig å konkludere X basert på dette designet?»), ikke bare be om gjengivelse av funn.
+For kildekritikk: vær spesifikk og konkret i alle vurderinger. Metodekritikk skal adressere forskningsdesign, utvalg, operasjonalisering, konfounders og generaliserbarhet. Samlet kilde-styrke skal være «sterk» kun for fagfellevurderte studier med solid design, «middels» for studier med noen svakheter, «svak» for studier med vesentlige metodologiske problemer. Generer minst 3 punkter for metodekritikk.
+For påstandsanalyse: identifiser 2-4 nøkkelpåstander, vurder om evidensen i teksten faktisk underbygger dem (intern konsistens), og plasser dem mot etablert konsensus i feltet (ekstern validering).
+For perspektiv og bias: beskriv først den overordnede teoretiske eller ideologiske rammen teksten opererer innenfor, gi deretter 2-3 konkrete eksempler på hvordan dette viser seg (ordvalg, kildeseleksjon, framing av resultater), og list 2-3 perspektiver som er utelatt.
+Samlet innholdsvurdering: «sterk» kun dersom påstandene er godt underbygget internt OG i tråd med feltets konsensus, «middels» dersom noe er ubalansert eller mangelfullt underbygget, «svak» dersom vesentlige påstander mangler evidens eller strider mot konsensus.
+For kildetype: klassifiser alltid som primær- eller sekundærkilde med begrunnelse. Angi sjanger presist — ikke bruk generiske termer som «artikkel» når du kan spesifisere «fagfellevurdert originalartikkel» eller «populærvitenskapelig kronikk».
+For språk og virkemidler: beskriv tonen presist. Identifiser 2-3 konkrete ladede ord eller formuleringer med forklaring av effekten de har. Identifiser 2-3 retoriske grep med eksempler fra teksten.
+
+Minimumskrav (ALLE må oppfylles, ingen unntak):
+- 4-5 sammendrag-temaer (4-6 punkter hver, ALDRI færre enn 4 temaer)
+- 10 Q&A-par (ALDRI færre enn 10, minst 3 kritiske)
+- 4-6 argumentasjoner (ALDRI færre enn 4)
+- Komplett kildekritikk med alle åtte deler utfylt (kildevurdering, kildetype, metodekritikk, samlet_kilde, pastandsanalyse, perspektiv, sprak_og_virkemidler, samlet_innhold)`;
+}
+
+// --- Call Gemini directly from browser with PDF as inlineData ---
+async function callGeminiWithPdfDirect(apiKey, model, file) {
+  const arrayBuffer = await file.arrayBuffer();
+  const bytes = new Uint8Array(arrayBuffer);
+  let binary = '';
+  const chunkSize = 8192;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+  }
+  const pdfBase64 = btoa(binary);
+
+  const prompt = buildClientPrompt();
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
+
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{
+        parts: [
+          { inline_data: { mime_type: 'application/pdf', data: pdfBase64 } },
+          { text: prompt },
+        ],
+      }],
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    const msg = err.error && err.error.message ? err.error.message : 'Gemini API feilet';
+    if (res.status === 401) throw new Error('Ugyldig API-nokkel. Sjekk at nokkelen er riktig.');
+    if (res.status === 429) throw new Error('API-kvote overskredet. Prov igjen senere.');
+    throw new Error('Feil ved kontakt med AI-tjenesten: ' + msg);
+  }
+
+  const data = await res.json();
+  const raw = (data.candidates && data.candidates[0] && data.candidates[0].content &&
+    data.candidates[0].content.parts && data.candidates[0].content.parts[0] &&
+    data.candidates[0].content.parts[0].text) ? data.candidates[0].content.parts[0].text : '';
+  return JSON.parse(raw.trim().replace(/^```json\n?/, '').replace(/\n?```$/, ''));
 }
 
 // --- Generate ---
@@ -321,8 +411,9 @@ async function generate() {
       if (!selectedFile) return;
       const mimeType = selectedFile.type || detectMime(selectedFile.name);
       if (mimeType === 'application/pdf' && provider === 'google') {
-        const fileUri = await uploadPdfToGemini(apiKey, selectedFile);
-        body = { fileUri, mimeType, size: selectedFile.size, apiKey, model };
+        const result = await callGeminiWithPdfDirect(apiKey, model, selectedFile);
+        showResult(result);
+        return;
       } else {
         const text = await extractTextFromFile(selectedFile);
         body = { text, apiKey, model };
