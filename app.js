@@ -253,6 +253,42 @@ async function fetchTextFromUrl(url) {
   return data.text;
 }
 
+// --- Upload PDF directly to Gemini File API ---
+async function uploadPdfToGemini(apiKey, file) {
+  const initRes = await fetch(
+    'https://generativelanguage.googleapis.com/upload/v1beta/files?uploadType=resumable&key=' + apiKey,
+    {
+      method: 'POST',
+      headers: {
+        'X-Goog-Upload-Protocol': 'resumable',
+        'X-Goog-Upload-Command': 'start',
+        'X-Goog-Upload-Header-Content-Length': String(file.size),
+        'X-Goog-Upload-Header-Content-Type': 'application/pdf',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ file: { display_name: file.name } }),
+    }
+  );
+  if (!initRes.ok) throw new Error('Kunne ikke starte filopplasting til Gemini.');
+
+  const uploadUrl = initRes.headers.get('X-Goog-Upload-URL');
+  if (!uploadUrl) throw new Error('Fikk ikke opplastings-URL fra Gemini.');
+
+  const uploadRes = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Length': String(file.size),
+      'X-Goog-Upload-Command': 'upload, finalize',
+      'X-Goog-Upload-Offset': '0',
+    },
+    body: file,
+  });
+  if (!uploadRes.ok) throw new Error('Filopplasting til Gemini feilet.');
+
+  const fileData = await uploadRes.json();
+  return fileData.file.uri;
+}
+
 // --- Generate ---
 async function generate() {
   const errEl = document.getElementById('error-msg');
@@ -285,15 +321,8 @@ async function generate() {
       if (!selectedFile) return;
       const mimeType = selectedFile.type || detectMime(selectedFile.name);
       if (mimeType === 'application/pdf' && provider === 'google') {
-        const arrayBuffer = await selectedFile.arrayBuffer();
-        const bytes = new Uint8Array(arrayBuffer);
-        let binary = '';
-        const chunkSize = 8192;
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-          binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
-        }
-        const pdfData = btoa(binary);
-        body = { pdfData, mimeType, size: selectedFile.size, apiKey, model };
+        const fileUri = await uploadPdfToGemini(apiKey, selectedFile);
+        body = { fileUri, mimeType, size: selectedFile.size, apiKey, model };
       } else {
         const text = await extractTextFromFile(selectedFile);
         body = { text, apiKey, model };
