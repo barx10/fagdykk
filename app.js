@@ -211,9 +211,9 @@ async function extractTextFromFile(file) {
   const arrayBuffer = await file.arrayBuffer();
 
   if (mimeType === 'application/pdf') {
-    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js');
+    await loadScript('/lib/pdf.min.js');
     const pdfjsLib = window.pdfjsLib;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/lib/pdf.worker.min.js';
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
     const pages = [];
     for (let i = 1; i <= pdf.numPages; i++) {
