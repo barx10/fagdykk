@@ -279,22 +279,29 @@ async function generate() {
   document.getElementById('spinner').classList.add('visible');
 
   try {
-    let text;
+    let body;
 
     if (currentMode === 'fil') {
       if (!selectedFile) return;
-      text = await extractTextFromFile(selectedFile);
+      const mimeType = selectedFile.type || detectMime(selectedFile.name);
+      if (mimeType === 'application/pdf' && provider === 'google') {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const pdfData = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+        body = { pdfData, mimeType, size: selectedFile.size, apiKey, model };
+      } else {
+        const text = await extractTextFromFile(selectedFile);
+        body = { text, apiKey, model };
+      }
     } else if (currentMode === 'tekst') {
-      text = document.getElementById('paste-input').value;
+      const text = document.getElementById('paste-input').value;
+      if (!text || !text.trim()) throw new Error('Lim inn tekst først.');
+      body = { text, apiKey, model };
     } else if (currentMode === 'lenke') {
       var url = document.getElementById('url-input').value.trim();
       if (!url) throw new Error('Legg inn en lenke.');
-      text = await fetchTextFromUrl(url);
+      const text = await fetchTextFromUrl(url);
+      body = { text, apiKey, model };
     }
-
-    if (!text || !text.trim()) throw new Error('Kunne ikke hente tekst. Sjekk at kilden inneholder lesbar tekst.');
-
-    const body = { text: text, apiKey: apiKey, model: model };
 
     const res = await fetch('/api/generate', {
       method: 'POST',

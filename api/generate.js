@@ -119,6 +119,19 @@ async function callGemini(apiKey, model, prompt, text) {
   return (response.text ?? '').trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
 }
 
+async function callGeminiWithPdf(apiKey, model, prompt, pdfBase64) {
+  const { GoogleGenAI } = await import('@google/genai');
+  const ai = new GoogleGenAI({ apiKey });
+
+  const contents = [
+    { inlineData: { mimeType: 'application/pdf', data: pdfBase64 } },
+    { text: prompt },
+  ];
+
+  const response = await ai.models.generateContent({ model, contents });
+  return (response.text ?? '').trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
+}
+
 async function callOpenAI(apiKey, model, prompt, text) {
   const OpenAI = (await import('openai')).default;
   const client = new OpenAI({ apiKey });
@@ -151,14 +164,14 @@ async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { mimeType, size, text, apiKey, model } = req.body;
+  const { mimeType, size, text, pdfData, apiKey, model } = req.body;
 
   if (mimeType) {
     const validationError = validateFile(mimeType, size);
     if (validationError) return res.status(400).json({ error: validationError });
   }
 
-  if (!text || !text.trim()) return res.status(400).json({ error: 'Ingen tekst mottatt.' });
+  if (!pdfData && (!text || !text.trim())) return res.status(400).json({ error: 'Ingen tekst mottatt.' });
   if (!apiKey) return res.status(400).json({ error: 'Mangler API-nokkel.' });
   if (!model || !ALL_MODELS.includes(model)) return res.status(400).json({ error: 'Ugyldig modell.' });
 
@@ -167,9 +180,13 @@ async function handler(req, res) {
 
   let raw;
   try {
-    raw = isGoogle
-      ? await callGemini(apiKey, model, prompt, text)
-      : await callOpenAI(apiKey, model, prompt, text);
+    if (isGoogle && pdfData) {
+      raw = await callGeminiWithPdf(apiKey, model, prompt, pdfData);
+    } else if (isGoogle) {
+      raw = await callGemini(apiKey, model, prompt, text);
+    } else {
+      raw = await callOpenAI(apiKey, model, prompt, text);
+    }
   } catch (err) {
     console.error('API call error:', err.status || err.code, err.message);
 
