@@ -7,7 +7,7 @@ const MAX_BYTES = 20 * 1024 * 1024;
 const GOOGLE_MODELS = [
   'gemini-2.5-flash-lite',
   'gemini-3-flash-preview',
-  'gemini-3.1-flash-lite',
+  'gemini-3.1-flash',
 ];
 const OPENAI_MODELS = [
   'gpt-5-mini',
