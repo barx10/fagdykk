@@ -286,7 +286,13 @@ async function generate() {
       const mimeType = selectedFile.type || detectMime(selectedFile.name);
       if (mimeType === 'application/pdf' && provider === 'google') {
         const arrayBuffer = await selectedFile.arrayBuffer();
-        const pdfData = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+        const bytes = new Uint8Array(arrayBuffer);
+        let binary = '';
+        const chunkSize = 8192;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+        }
+        const pdfData = btoa(binary);
         body = { pdfData, mimeType, size: selectedFile.size, apiKey, model };
       } else {
         const text = await extractTextFromFile(selectedFile);
