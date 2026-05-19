@@ -119,12 +119,12 @@ async function callGemini(apiKey, model, prompt, text) {
   return (response.text ?? '').trim().replace(/^```json\n?/, '').replace(/\n?```$/, '');
 }
 
-async function callGeminiWithPdf(apiKey, model, prompt, pdfBase64) {
+async function callGeminiWithFileUri(apiKey, model, prompt, fileUri) {
   const { GoogleGenAI } = await import('@google/genai');
   const ai = new GoogleGenAI({ apiKey });
 
   const contents = [
-    { inlineData: { mimeType: 'application/pdf', data: pdfBase64 } },
+    { fileData: { fileUri, mimeType: 'application/pdf' } },
     { text: prompt },
   ];
 
@@ -164,14 +164,14 @@ async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const { mimeType, size, text, pdfData, apiKey, model } = req.body;
+  const { mimeType, size, text, fileUri, apiKey, model } = req.body;
 
   if (mimeType) {
     const validationError = validateFile(mimeType, size);
     if (validationError) return res.status(400).json({ error: validationError });
   }
 
-  if (!pdfData && (!text || !text.trim())) return res.status(400).json({ error: 'Ingen tekst mottatt.' });
+  if (!fileUri && (!text || !text.trim())) return res.status(400).json({ error: 'Ingen tekst mottatt.' });
   if (!apiKey) return res.status(400).json({ error: 'Mangler API-nokkel.' });
   if (!model || !ALL_MODELS.includes(model)) return res.status(400).json({ error: 'Ugyldig modell.' });
 
@@ -180,8 +180,8 @@ async function handler(req, res) {
 
   let raw;
   try {
-    if (isGoogle && pdfData) {
-      raw = await callGeminiWithPdf(apiKey, model, prompt, pdfData);
+    if (isGoogle && fileUri) {
+      raw = await callGeminiWithFileUri(apiKey, model, prompt, fileUri);
     } else if (isGoogle) {
       raw = await callGemini(apiKey, model, prompt, text);
     } else {
