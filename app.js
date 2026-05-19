@@ -349,26 +349,33 @@ async function callGeminiWithPdfDirect(apiKey, model, file) {
   const pdfBase64 = btoa(binary);
 
   const prompt = buildClientPrompt();
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey;
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{
-        parts: [
-          { inline_data: { mime_type: 'application/pdf', data: pdfBase64 } },
-          { text: prompt },
-        ],
-      }],
-    }),
+  const url = 'https://generativelanguage.googleapis.com/v1/models/' + model + ':generateContent?key=' + apiKey;
+  const reqBody = JSON.stringify({
+    contents: [{
+      parts: [
+        { inline_data: { mime_type: 'application/pdf', data: pdfBase64 } },
+        { text: prompt },
+      ],
+    }],
   });
+
+  let res;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(function(r) { setTimeout(r, attempt * 2000); });
+    res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: reqBody,
+    });
+    if (res.status !== 503 && res.status !== 502) break;
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     const msg = err.error && err.error.message ? err.error.message : 'Gemini API feilet';
     if (res.status === 401) throw new Error('Ugyldig API-nokkel. Sjekk at nokkelen er riktig.');
     if (res.status === 429) throw new Error('API-kvote overskredet. Prov igjen senere.');
+    if (res.status === 503 || res.status === 502) throw new Error('Modellen er ikke tilgjengelig akkurat nå. Prøv igjen om litt, eller velg en annen modell.');
     throw new Error('Feil ved kontakt med AI-tjenesten: ' + msg);
   }
 
