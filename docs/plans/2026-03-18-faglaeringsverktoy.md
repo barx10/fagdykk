@@ -4,7 +4,7 @@
 
 **Goal:** Elever laster opp PDF/DOCX med fagstoff og får det differensiert til et interaktivt HTML-læringsverktøy med 6 faner.
 
-**Architecture:** Single HTML-fil med to tilstander (upload/resultat), en Vercel serverless funksjon som kaller Gemini 3.1 Flash-Lite Preview og returnerer strukturert JSON. DOCX-tekst ekstraheres klient-side med mammoth.js, PDF sendes som base64. All bruker-/AI-generert tekst escapes med en `esc()`-hjelpefunksjon for å unngå XSS.
+**Architecture:** Single HTML-fil med to tilstander (upload/resultat), en Vercel serverless funksjon som kaller Gemini 3.6 Flash og returnerer strukturert JSON. DOCX-tekst ekstraheres klient-side med mammoth.js, PDF sendes som base64. All bruker-/AI-generert tekst escapes med en `esc()`-hjelpefunksjon for å unngå XSS.
 
 **Tech Stack:** Vanilla HTML/CSS/JS (frontend), Node.js (Vercel serverless), `@google/genai` SDK, `mammoth` (DOCX-parsing), `jest` (tester)
 
@@ -269,7 +269,7 @@ async function handler(req, res) {
       : [{ text: buildPrompt() + '\n\nFagstoff:\n' + text }];
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-lite-preview',
+      model: 'gemini-3.6-flash',
       contents,
     });
 
@@ -1314,6 +1314,6 @@ git push origin main
 
 Etter Task 7 er verktøyet live på Vercel med:
 - PDF/DOCX-opplasting med klient-side validering
-- Gemini 3.1 Flash-Lite Preview-generering (API-nøkkel skjult)
+- Gemini 3.6 Flash-generering (API-nøkkel skjult)
 - 6 lærings-faner med XSS-safe DOM-rendering
 - Nedlastbar standalone HTML-fil

@@ -2,7 +2,7 @@
 var MODELS = {
   'gemini-2.5-flash-lite': { provider: 'google', label: 'Gemini 2.5 Flash Lite' },
   'gemini-3-flash-preview': { provider: 'google', label: 'Gemini 3 Flash Preview' },
-  'gemini-3.1-flash-lite': { provider: 'google', label: 'Gemini 3.1 Flash Lite' },
+  'gemini-3.6-flash': { provider: 'google', label: 'Gemini 3.6 Flash' },
   'gpt-5-mini': { provider: 'openai', label: 'GPT-5 mini' },
   'gpt-5.4-nano': { provider: 'openai', label: 'GPT-5.4 nano' },
   'gpt-5.4-mini': { provider: 'openai', label: 'GPT-5.4 mini' },

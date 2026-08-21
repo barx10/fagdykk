@@ -16,14 +16,14 @@ frontend (index.html)
     └── POST fil/tekst
             ↓
 /api/generate (Vercel serverless, Node.js)
-    └── Gemini 3.1 Flash-Lite Preview API
+    └── Gemini 3.6 Flash API
             ↓
     Strukturert JSON
             ↓
 frontend renderer faner + tilbyr nedlasting
 ```
 
-**Modell:** `gemini-3.1-flash-lite-preview`
+**Modell:** `gemini-3.6-flash`
 **Hosting:** Vercel (API-nøkkel som miljøvariabel, skjult for klient)
 
 ## Filstruktur
